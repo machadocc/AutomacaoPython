@@ -1,1 +1,1 @@
-# automacao
+Automação feita para ser utilizada localmente em um ambiente de trabalho especifico
