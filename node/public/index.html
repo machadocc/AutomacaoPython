@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tickets</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Tickets</h1>
+  <!-- Adicione um campo de entrada para o filtro de ID -->
+  <div class="filtro-container">
+    <label for="filtro">Filtrar por:</label>
+    <select id="filtro">
+      <option value="id">ID</option>
+      <option value="ticket">Ticket</option>
+      <option value="status">Status</option>
+    </select>
+    <input type="text" id="filtro-valor">
+    <button onclick="aplicarFiltro()">Aplicar Filtro</button>
+  </div>
+  <div class="contador-dados">
+    <p id="contador"></p>
+  </div>
+
+  <div class="tabela-informacao">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>TICKET</th>
+          <th>STATUS</th>
+        </tr>
+      </thead>
+      <tbody id="tabela-dados">
+      </tbody>
+    </table>
+    <div class="paginacao" id="paginacao"></div>
+  </div>
+
+  <script>
+    let intervaloAtualizacao;
+    let dados = []; // Variável para armazenar todos os dados
+    let paginaAtual = 1;
+    const itensPorPagina = 10;
+
+    function atualizarDados() {
+      const filtro = document.getElementById('filtro').value;
+      const filtroValor = document.getElementById('filtro-valor').value.trim();
+      let url = '/dados';
+      if (filtroValor !== '') {
+        url += `?filtro=${filtro}&valor=${filtroValor}`;
+      }
+      
+      fetch(url)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Erro ao obter os dados');
+          }
+          return response.json();
+        })
+        .then(data => {
+          dados = data;
+          mostrarDados();
+        })
+        .catch(error => {
+          console.error('Erro:', error);
+        });
+    }
+
+    function mostrarDados() {
+  const tabelaDados = document.getElementById('tabela-dados');
+  const contadorElemento = document.getElementById('contador');
+  const paginacao = document.getElementById('paginacao');
+  let contadorExibidos = 0;
+
+  // Classificar os dados pelo ID em ordem decrescente
+  dados.sort((a, b) => b.id - a.id);
+
+  const startIndex = (paginaAtual - 1) * itensPorPagina;
+  const slicedData = dados.slice(startIndex, startIndex + itensPorPagina);
+
+  tabelaDados.innerHTML = '';
+  if (slicedData.length === 0) {
+    const linhaVazia = document.createElement('tr');
+    linhaVazia.innerHTML = '<td colspan="4">Nenhum dado encontrado</td>';
+    tabelaDados.appendChild(linhaVazia);
+    contadorElemento.textContent = 'Nenhum dado encontrado';
+    return;
+  }
+
+  slicedData.forEach(dado => {
+    const linha = document.createElement('tr');
+    linha.innerHTML = `
+      <td class="id tabela">${dado.id}</td>
+      <td class="ticket tabela">${dado.ticket}</td>
+      <td class="status tabela">${dado.status}</td>
+    `;
+    tabelaDados.appendChild(linha);
+    contadorExibidos++;
+  });
+
+  contadorElemento.textContent = `Encontrado: ${contadorExibidos} de ${dados.length}`;
+
+  const totalPages = Math.ceil(dados.length / itensPorPagina);
+  let paginationButtons = '';
+  for (let i = 1; i <= totalPages; i++) {
+    paginationButtons += `<button onclick="changePage(${i})">${i}</button>`;
+  }
+  paginacao.innerHTML = paginationButtons;
+}
+
+    function changePage(page) {
+      paginaAtual = page;
+      mostrarDados();
+    }
+    
+
+    function aplicarFiltro() {
+      clearInterval(intervaloAtualizacao);
+      atualizarDados();
+      intervaloAtualizacao = setInterval(atualizarDados, 5000);
+    }
+  </script>
+</body>
+</html>
